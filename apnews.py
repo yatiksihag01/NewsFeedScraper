@@ -7,6 +7,8 @@ class SourceDto:
     def __init__(self, name, imageUrl=None):
         self.name = name
         self.imageUrl = imageUrl
+    def to_dict(self):
+        return {"name": self.name, "imageUrl": self.imageUrl} 
 
 class ArticleDto:
     def __init__(self, title, url, description, urlToImage, publishedAt, sourceDto):
@@ -16,6 +18,15 @@ class ArticleDto:
         self.urlToImage = urlToImage
         self.publishedAt = publishedAt
         self.sourceDto = sourceDto
+    def to_dict(self):
+        return {
+            "title": self.title,
+            "url": self.url,
+            "description": self.description,
+            "urlToImage": self.urlToImage,
+            "publishedAt": self.publishedAt,
+            "sourceDto": self.sourceDto.to_dict()  # Convert SourceDto to dictionary
+        }
 
 # AP News URL
 url = "https://apnews.com/world-news"
