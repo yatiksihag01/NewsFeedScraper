@@ -1,15 +1,15 @@
-import requests
-from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 
-def fetch_apnews_articles():
-        
-    # New York Times URL
-    url = "https://www.nytimes.com/"
+import requests
+from bs4 import BeautifulSoup
 
+from utils.constants import ny_times_url, header
+
+
+def fetch_ny_times_articles():
     # Headers to mimic a browser request
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+        "User-Agent": header
     }
 
     # List to store articles
@@ -20,7 +20,7 @@ def fetch_apnews_articles():
     session.headers.update(headers)
 
     # Send a GET request
-    response = session.get(url)
+    response = session.get(ny_times_url)
 
     # Check response status
     if response.status_code == 200:
@@ -43,7 +43,7 @@ def fetch_apnews_articles():
                 continue
 
             # Extract article URL
-            article_url = urljoin(url, article['href']) if article.has_attr('href') else 'No URL found'
+            article_url = urljoin(ny_times_url, article['href']) if article.has_attr('href') else 'No URL found'
 
             # Extract description
             description_tag = article.find('p', class_='summary-class')
@@ -61,12 +61,12 @@ def fetch_apnews_articles():
                     if source_tag and source_tag.has_attr('srcset'):
                         srcset_images = source_tag['srcset'].split(',')  # srcset is comma-separated
                         highest_quality_image = srcset_images[-1].split(' ')[0]  # Get the last src (highest quality)
-                        url_to_image = urljoin(url, highest_quality_image)
+                        url_to_image = urljoin(ny_times_url, highest_quality_image)
                     # If no <source>, check for <img> tag
                     elif picture_tag.find('img'):
                         img_tag = picture_tag.find('img')
                         if img_tag and img_tag.has_attr('src'):
-                            url_to_image = urljoin(url, img_tag['src'])
+                            url_to_image = urljoin(ny_times_url, img_tag['src'])
 
             # Published date (not available in provided HTML)
             published_at = 'No date found'
@@ -77,8 +77,9 @@ def fetch_apnews_articles():
                 "description": description,
                 "urlToImage": url_to_image,
                 "publishedAt": published_at,
-                "sourceDto": {
-                    "name": "New York Times"
+                "source": {
+                    "name": "New York Times",
+                    "imageUrl": None
                 }
             })
 
@@ -86,4 +87,5 @@ def fetch_apnews_articles():
         print("Error: Unable to retrieve page.")
         print(response.text[:1000])  # Print first 1000 characters for debugging
 
+    print(f"Scrapped {len(articles_data)} articles from NY Times.")
     return articles_data

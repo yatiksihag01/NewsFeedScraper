@@ -1,14 +1,15 @@
-import requests
-from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 
-def fetch_apnews_articles():
-    # AP News URL
-    url = "https://apnews.com/world-news"
+import requests
+from bs4 import BeautifulSoup
 
+from utils.constants import header, apnews_url
+
+
+def fetch_apnews_articles():
     # Headers to mimic a browser request
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+        "User-Agent": header
     }
 
     # List to store articles
@@ -19,7 +20,7 @@ def fetch_apnews_articles():
     session.headers.update(headers)
 
     # Send a GET request
-    response = session.get(url)
+    response = session.get(apnews_url)
 
     # Check response status
     print(f"Status Code: {response.status_code}")
@@ -40,7 +41,8 @@ def fetch_apnews_articles():
 
             # Extract article URL
             link_tag = title_tag.find('a')
-            article_url = urljoin(url, link_tag['href']) if link_tag and link_tag.has_attr('href') else 'No URL found'
+            article_url = urljoin(apnews_url, link_tag['href']) if link_tag and link_tag.has_attr(
+                'href') else 'No URL found'
 
             # Extract description
             description_tag = article.find('div', class_='PagePromo-description')
@@ -48,7 +50,8 @@ def fetch_apnews_articles():
 
             # Extract image URL
             img_tag = article.find('img')
-            url_to_image = urljoin(url, img_tag['src']) if img_tag and img_tag.has_attr('src') else 'No image found'
+            url_to_image = urljoin(apnews_url, img_tag['src']) if img_tag and img_tag.has_attr(
+                'src') else 'No image found'
 
             # Try to extract published date
             published_at_tag = article.find('time')  # Look for a <time> element
@@ -60,10 +63,11 @@ def fetch_apnews_articles():
                 "description": description,
                 "urlToImage": url_to_image,
                 "publishedAt": published_at,
-                "sourceDto": {
+                "source": {
                     "name": "AP News",
-                    "imageUrl":"https://assets.apnews.com/fa/ba/9258a7114f5ba5c7202aaa1bdd66/aplogo.svg"
+                    "imageUrl": "https://assets.apnews.com/fa/ba/9258a7114f5ba5c7202aaa1bdd66/aplogo.svg"
                 }
             })
-            
+
+    print(f"Scrapped {len(articles_data)} articles from AP News.")
     return articles_data

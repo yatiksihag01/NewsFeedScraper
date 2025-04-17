@@ -1,20 +1,21 @@
-import requests
-from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 
-def fetch_mprnews_articles():
-    # Base URL of the news website
-    url = "https://www.mprnews.org/"
+import requests
+from bs4 import BeautifulSoup
 
+from utils.constants import header, mprnews_url
+
+
+def fetch_mprnews_articles():
     # Send an HTTP request to get the page content with User-Agent header
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+        "User-Agent": header
     }
 
     # List to store articles
     articles_data = []
 
-    response = requests.get(url, headers=headers)
+    response = requests.get(mprnews_url, headers=headers)
 
     # Check if the request is successful
     if response.status_code != 200:
@@ -22,10 +23,10 @@ def fetch_mprnews_articles():
     else:
         # Parse the HTML content using BeautifulSoup
         soup = BeautifulSoup(response.text, 'html.parser')
-        
+
         # Extract the source name and image URL
         source_name = "MPR News"
-        source_image_url = url + "img/MPR-news-logo.svg"
+        source_image_url = mprnews_url + "img/MPR-news-logo.svg"
 
         # Scrape the main story section
         main_story = soup.find('div', class_='home-main-story-body')
@@ -33,7 +34,7 @@ def fetch_mprnews_articles():
             title_tag = main_story.find('h2') or main_story.find('h3') or main_story.find('a')
             title = title_tag.text.strip() if title_tag else 'No title found'
             link_tag = main_story.find('a', href=True)
-            article_url = urljoin(url, link_tag['href']) if link_tag else 'No URL found'
+            article_url = urljoin(mprnews_url, link_tag['href']) if link_tag else 'No URL found'
             description_tag = main_story.find('p')
             description = description_tag.text.strip() if description_tag else 'No description found'
             img_tag = main_story.find('img')
@@ -67,12 +68,12 @@ def fetch_mprnews_articles():
                 title_tag = article.find('h2') or article.find('h3')
                 title = title_tag.text.strip() if title_tag else 'No title found'
                 link_tag = article.find('a', href=True)
-                article_url = urljoin(url, link_tag['href']) if link_tag else 'No URL found'
+                article_url = urljoin(mprnews_url, link_tag['href']) if link_tag else 'No URL found'
                 description_tag = article.find('p')
                 description = description_tag.text.strip() if description_tag else 'No description found'
                 img_tag = article.find('img')
                 url_to_image = img_tag['src'] if img_tag else 'No image found'
-                
+
                 # Extract published date
                 time_tag = article.find('div', class_='home-time-ago')
                 date_tag = article.find_all('div')[1]  # Assuming the date is the second div in the article
@@ -90,7 +91,6 @@ def fetch_mprnews_articles():
                     }
                 })
 
-
         # Scrape the home more stories section
         more_stories = soup.find('div', class_='home-more-stories')
         if more_stories:
@@ -99,7 +99,7 @@ def fetch_mprnews_articles():
                 title_tag = article.find('h2') or article.find('h3')
                 title = title_tag.text.strip() if title_tag else 'No title found'
                 link_tag = article.find('a', href=True)
-                article_url = urljoin(url, link_tag['href']) if link_tag else 'No URL found'
+                article_url = urljoin(mprnews_url, link_tag['href']) if link_tag else 'No URL found'
                 description_tag = article.find('p')
                 description = description_tag.text.strip() if description_tag else 'No description found'
                 img_tag = article.find('img')
@@ -120,5 +120,6 @@ def fetch_mprnews_articles():
                         "imageUrl": source_image_url
                     }
                 })
-                
+
+    print(f"Scrapped {len(articles_data)} articles from MPR News.")
     return articles_data

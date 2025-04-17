@@ -1,75 +1,68 @@
+import re
+import xml.etree.ElementTree as ET
+
 import requests
-from bs4 import BeautifulSoup
-from urllib.parse import urljoin
 
-def fetch_theguardian_articles():
-    # The Guardian URL
-    url = "https://www.theguardian.com/international"
+from utils.utils import is_trending
 
-    # Headers to mimic a browser request
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
-    }
 
-    # List to store articles
-    articles_data = []
+def strip_html_tags(text):
+    return re.sub(r'<[^>]+>', '', text)
 
-    # Create a session
-    session = requests.Session()
-    session.headers.update(headers)
 
-    # Send a GET request
-    response = session.get(url)
+def fetch_guardian_rss_articles(rss_url):
+    try:
+        response = requests.get(rss_url, timeout=10)
+        response.raise_for_status()
+    except requests.RequestException as e:
+        print(f"Failed to fetch Guardian RSS feed from {rss_url}: {e}")
+        return []
 
-    # Check response status
-    print(f"Status Code: {response.status_code}")
-    if response.status_code != 200:
-        print("Error: Unable to retrieve page.")
-        print(response.text[:1000])  # Print first 1000 characters for debugging
-    else:
-        # Parse the HTML content
-        soup = BeautifulSoup(response.text, 'html.parser')
+    try:
+        root = ET.fromstring(response.content)
+    except ET.ParseError as e:
+        print(f"Failed to parse Guardian RSS XML: {e}")
+        return []
 
-        # ---- Extract articles from the new HTML structure ----
-        new_articles = soup.find_all('div', class_='dcr-f9aim1')  # New articles
+    channel = root.find("channel")
+    if channel is None:
+        print("Invalid RSS feed: <channel> not found")
+        return []
 
-        for new_article in new_articles:
-            try:
-                # Extract title
-                title_tag = new_article.find('a')
-                title = title_tag['aria-label'].strip() if title_tag and title_tag.has_attr('aria-label') else 'No title found'
+    articles = []
+    media_ns = "{http://search.yahoo.com/mrss/}"
+    dc_ns = "{http://purl.org/dc/elements/1.1/}"
 
-                # Extract article URL
-                article_url = urljoin(url, title_tag['href']) if title_tag and title_tag.has_attr('href') else 'No URL found'
+    for item in channel.findall("item"):
+        title = item.findtext("title", default="No Title").strip()
+        description_raw = item.findtext("description", default="No Description")
+        description = strip_html_tags(description_raw).strip()
 
-                # Extract description
-                description = title  # Use title as description
+        link = item.findtext("link", default="No URL").strip()
+        pub_date = item.findtext("pubDate", default=None).strip()
 
-                # Extract image URL
-                img_tag = new_article.find('img')
-                url_to_image = urljoin(url, img_tag['src']) if img_tag and img_tag.has_attr('src') else 'No image found'
+        # Get the highest resolution media:content
+        image_url = None
+        for media in item.findall(f"{media_ns}content"):
+            url = media.attrib.get("url")
+            width = int(media.attrib.get("width", 0))
+            if url and (image_url is None or width > 140):  # prefer larger image
+                image_url = url
 
-                # Extract the published date from <time> tag
-                time_tag = new_article.find('time')
-                if time_tag and time_tag.has_attr('datetime'):
-                    published_at = time_tag['datetime']  # Extract the datetime attribute (ISO format)
-                else:
-                    published_at = 'No date found'
+        if not image_url:
+            image_url = "No image found"
 
-                # Add article data to the list
-                articles_data.append({
-                    "title": title,
-                    "url": article_url,
-                    "description": description,
-                    "urlToImage": url_to_image,
-                    "publishedAt": published_at,
-                    "sourceDto": {
-                        "name": "The Guardian",
-                        "imageUrl": "https://assets.guim.co.uk/images/guardian-logo-rss.c45beb1bafa34b347ac333af2e6fe23f.png"
-                    }
-                })
-
-            except Exception as e:
-                print(f"Error parsing new article: {e}")
-
-    return articles_data
+        articles.append({
+            "title": title,
+            "url": link,
+            "description": description,
+            "urlToImage": image_url,
+            "publishedAt": pub_date,
+            "source": {
+                "name": "The Guardian",
+                "imageUrl": "https://assets.guim.co.uk/images/guardian-logo-rss.c45beb1bafa34b347ac333af2e6fe23f.png"
+            },
+            "is_trending": is_trending(pub_date)  # Assume trending if published recently
+        })
+    print(f"Fetched {len(articles)} articles from {rss_url}")
+    return articles

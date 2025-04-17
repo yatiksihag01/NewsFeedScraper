@@ -1,20 +1,21 @@
-import requests
-from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 
-def fetch_unnews_articles():
-    # Target website URL
-    url = "https://news.un.org/en/news"
+import requests
+from bs4 import BeautifulSoup
 
+from utils.constants import header, un_news_url
+
+
+def fetch_un_news_articles():
     # Headers to mimic a real browser request
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+        "User-Agent": header
     }
 
     # List to store articles
     articles_data = []
 
-    response = requests.get(url, headers=headers)
+    response = requests.get(un_news_url, headers=headers)
 
     # Check if request is successful
     if response.status_code != 200:
@@ -32,7 +33,7 @@ def fetch_unnews_articles():
 
             # Extract Article URL
             link_tag = title_tag.find('a') if title_tag else None
-            article_url = urljoin(url, link_tag['href']) if link_tag else 'No URL found'
+            article_url = urljoin(un_news_url, link_tag['href']) if link_tag else 'No URL found'
 
             # Extract Description
             description_tag = article.find('div', class_='field--name-field-news-story-lead')
@@ -49,7 +50,8 @@ def fetch_unnews_articles():
                     # Look for the best quality image in <source> tags
                     source_tags = picture_tag.find_all('source')
                     if source_tags:
-                        url_to_image = urljoin(url, source_tags[-1]['srcset'].split(',')[0].strip().split(' ')[0])  # Get the last <source>
+                        url_to_image = urljoin(un_news_url, source_tags[-1]['srcset'].split(',')[0].strip().split(' ')[
+                            0])  # Get the last <source>
 
                 # If <picture> not found or no <source> images, try <img>
                 if url_to_image == 'No image found':
@@ -67,10 +69,11 @@ def fetch_unnews_articles():
                 "description": description,
                 "urlToImage": url_to_image,
                 "publishedAt": published_at,
-                "sourceDto": {
+                "source": {
                     "name": "United Nations",
                     "imageUrl": "https://news.un.org/en/themes/custom/un_base_theme/images/un-emblem-for-rss.png"
                 }
             })
-            
+
+    print(f"Scrapped {len(articles_data)} articles from UN News.")
     return articles_data
