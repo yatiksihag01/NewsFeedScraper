@@ -1,0 +1,12 @@
+fastapi~=0.115.12
+uvicorn[standard]
+apscheduler~=3.11.0
+dateutils
+beautifulsoup4~=4.13.4
+httpx
+requests~=2.32.3
+dotenv~=0.9.9
+sqlalchemy~=2.0.40
+pydantic~=2.11.3
+python-dotenv~=1.1.0
+python-dateutil~=2.9.0.post0
