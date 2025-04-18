@@ -78,7 +78,7 @@ def save_articles(articles: list[dict]):
 def delete_old_articles():
     db = SessionLocal()
     try:
-        cutoff_date = datetime.now(timezone.utc) - timedelta(hours=3)
+        cutoff_date = datetime.now(timezone.utc) - timedelta(days=2)
         cutoff = cutoff_date.isoformat()
         db.query(Article).filter(Article.publishedAt < cutoff).delete(synchronize_session=False)
         db.commit()
