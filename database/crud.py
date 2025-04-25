@@ -1,37 +1,41 @@
 from datetime import datetime, timezone, timedelta
 from sqlite3 import IntegrityError
-from typing import List, Type
+from typing import List, cast
 
 from dateutil import parser
+from sqlalchemy import and_
 from sqlalchemy.orm import Session, joinedload
 
 from database.base import SessionLocal
 from models.news import Article, Source
+from schemas.news import NewsResponse
+from utils.utils import article_to_news_response
 
 
-def get_news_from_db(db: Session, last_item_id: int, limit: int = 100) -> list[Type[Article]]:
+def get_news_from_db(db: Session, last_item_id: int, limit: int = 100) -> list[NewsResponse]:
     articles = (
         db.query(Article)
         .options(joinedload(Article.source))
-        .offset(last_item_id)
+        .filter(Article.id > last_item_id)
         .limit(limit)
         .all()
     )
+    articles = cast(List[Article], articles)
+    return [article_to_news_response(article) for article in articles]
 
-    return articles
 
-
-def get_trending_news_from_db(db: Session, last_item_id: int, limit: int = 100) -> List[Type[Article]]:
+def get_trending_news_from_db(
+        db: Session, last_item_id: int, limit: int = 100
+) -> List[NewsResponse]:
     articles = (
         db.query(Article)
         .options(joinedload(Article.source))
-        .filter_by(isTrending=True)
-        .offset(last_item_id)
+        .filter(and_(Article.isTrending == True, Article.id > last_item_id))
         .limit(limit)
         .all()
     )
-
-    return articles
+    articles = cast(List[Article], articles)
+    return [article_to_news_response(article) for article in articles]
 
 
 def save_articles(articles: list[dict]):
@@ -78,7 +82,7 @@ def save_articles(articles: list[dict]):
 def delete_old_articles():
     db = SessionLocal()
     try:
-        cutoff_date = datetime.now(timezone.utc) - timedelta(hours=3)
+        cutoff_date = datetime.now(timezone.utc) - timedelta(days=2)
         cutoff = cutoff_date.isoformat()
         db.query(Article).filter(Article.publishedAt < cutoff).delete(synchronize_session=False)
         db.commit()

@@ -107,7 +107,8 @@ def fetch_mprnews_articles():
 
                 # Extract only the time
                 time_tag = article.find('div', class_='home-time-ago')
-                published_at = time_tag.text.strip() if time_tag else 'No time found'
+                published_at = time_tag.text.strip() if time_tag else None
+                if not published_at: continue
 
                 articles_data.append({
                     "title": title,

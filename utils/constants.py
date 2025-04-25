@@ -8,7 +8,8 @@ ndtv_world_news_url = "https://feeds.feedburner.com/ndtvnews-world-news"
 ny_times_url = "https://www.nytimes.com/"
 the_guardian_url = "https://www.theguardian.com/us/rss"
 un_news_url = "https://news.un.org/en/news"
-yahoo_news_url = "https://news.yahoo.com/"
+yahoo_rss_url = "https://www.yahoo.com/news/rss"
+yahoo_world_news_rss_url = "https://www.yahoo.com/news/rss/world"
 
-# Header to mimic browser behaviour
+# Header to mimic browser behavior
 header = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"

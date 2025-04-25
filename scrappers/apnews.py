@@ -32,17 +32,18 @@ def fetch_apnews_articles():
         soup = BeautifulSoup(response.text, 'html.parser')
 
         # ---- Extract main news articles ----
-        articles = soup.find_all('div', class_='PagePromo')  # Updated class to match provided HTML
+        articles = soup.find_all('div', class_='PagePromo')  # Updated class to match the provided HTML
 
         for article in articles:
             # Extract title
             title_tag = article.find('h3', class_='PagePromo-title')
-            title = title_tag.text.strip() if title_tag else 'No title found'
+            title = title_tag.text.strip() if title_tag else None
 
             # Extract article URL
             link_tag = title_tag.find('a')
             article_url = urljoin(apnews_url, link_tag['href']) if link_tag and link_tag.has_attr(
-                'href') else 'No URL found'
+                'href') else None
+            if not title or article_url: continue
 
             # Extract description
             description_tag = article.find('div', class_='PagePromo-description')
@@ -51,11 +52,12 @@ def fetch_apnews_articles():
             # Extract image URL
             img_tag = article.find('img')
             url_to_image = urljoin(apnews_url, img_tag['src']) if img_tag and img_tag.has_attr(
-                'src') else 'No image found'
+                'src') else None
 
             # Try to extract published date
             published_at_tag = article.find('time')  # Look for a <time> element
-            published_at = published_at_tag.text.strip() if published_at_tag else 'No date found'
+            published_at = published_at_tag.text.strip() if published_at_tag else None
+            if not published_at: continue
 
             articles_data.append({
                 "title": title,

@@ -42,7 +42,10 @@ def fetch_aljazeera_articles():
             # Extract article URL
             link_tag = article.find('a')
             article_url = urljoin(aljazeera_url, link_tag['href']) if link_tag and link_tag.has_attr(
-                'href') else 'No URL found'
+                'href') else None
+
+            if not article_url:
+                continue
 
             # Extract description
             desc_tag = article.find('p')
@@ -51,11 +54,12 @@ def fetch_aljazeera_articles():
             # Extract image URL
             img_tag = article.find('img')
             url_to_image = urljoin(aljazeera_url, img_tag['src']) if img_tag and img_tag.has_attr(
-                'src') else 'No image found'
+                'src') else None
 
             # Extract published date
             date_tag = article.find('span', class_='screen-reader-text')
-            published_at = date_tag.text.strip() if date_tag else 'No date found'
+            published_at = date_tag.text.strip() if date_tag else None
+            if not published_at: continue
 
             articles_data.append({
                 "title": title,

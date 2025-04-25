@@ -38,16 +38,13 @@ def fetch_ny_times_articles():
             title_tag = article.find('p', class_='indicate-hover')
             title = title_tag.text.strip() if title_tag else None
 
-            # Skip if no title found
-            if not title:
-                continue
-
             # Extract article URL
-            article_url = urljoin(ny_times_url, article['href']) if article.has_attr('href') else 'No URL found'
+            article_url = urljoin(ny_times_url, article['href']) if article.has_attr('href') else None
+            if not title or not article_url: continue
 
             # Extract description
             description_tag = article.find('p', class_='summary-class')
-            description = description_tag.text.strip() if description_tag else 'No description found'
+            description = description_tag.text.strip() if description_tag else None
 
             # Extract image URL
             url_to_image = 'No image found'

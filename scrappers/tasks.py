@@ -12,7 +12,7 @@ from scrappers.thegaurdiannews import fetch_guardian_rss_articles
 from scrappers.un_news import fetch_un_news_articles
 from scrappers.yahoonews import fetch_yahoonews_articles
 from utils.constants import bbc_top_news_url, bbc_world_news_url, the_guardian_url, ndtv_world_news_url, \
-    ndtv_trending_news_url
+    ndtv_trending_news_url, yahoo_rss_url, yahoo_world_news_rss_url
 
 all_tasks = [
     fetch_aljazeera_articles,
@@ -25,7 +25,8 @@ all_tasks = [
     fetch_ny_times_articles,
     lambda: fetch_guardian_rss_articles(the_guardian_url),
     fetch_un_news_articles,
-    fetch_yahoonews_articles
+    lambda: fetch_yahoonews_articles(yahoo_rss_url),
+    lambda: fetch_yahoonews_articles(yahoo_world_news_rss_url, is_trending=True)
 ]
 random.shuffle(all_tasks)
 batch_size = 3

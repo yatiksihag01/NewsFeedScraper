@@ -29,11 +29,11 @@ def fetch_un_news_articles():
         for article in articles:
             # Extract Title
             title_tag = article.find('h2', class_='node__title')
-            title = title_tag.text.strip() if title_tag else 'No title found'
+            title = title_tag.text.strip() if title_tag else None
 
             # Extract Article URL
             link_tag = title_tag.find('a') if title_tag else None
-            article_url = urljoin(un_news_url, link_tag['href']) if link_tag else 'No URL found'
+            article_url = urljoin(un_news_url, link_tag['href']) if link_tag else None
 
             # Extract Description
             description_tag = article.find('div', class_='field--name-field-news-story-lead')
@@ -61,7 +61,8 @@ def fetch_un_news_articles():
 
             # Extract Published Date (if available)
             time_tag = article.find('time')
-            published_at = time_tag['datetime'].split('T')[0] if time_tag else 'No date found'
+            published_at = time_tag['datetime'].split('T')[0] if time_tag else None
+            if not article_url or not title or not published_at: continue
 
             articles_data.append({
                 "title": title,
