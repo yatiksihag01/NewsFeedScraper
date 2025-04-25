@@ -13,8 +13,10 @@ class SourceResponse(BaseModel):
 
 
 class NewsResponse(BaseModel):
+    id: int
     title: str
     url: str
+    urlToImage: Optional[str]
     description: Optional[str]
     publishedAt: datetime
     source: SourceResponse

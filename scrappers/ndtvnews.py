@@ -21,6 +21,7 @@ def fetch_ndtvnews_articles(rss_url: str, is_trending=False):
 
             pub_date_raw = item.findtext("pubDate", default="").strip()
             pub_date = dateparser.parse(pub_date_raw).isoformat() if pub_date_raw else None
+            if not pub_date: continue
 
             description = item.findtext("description", default="").strip()
             content_encoded = item.findtext("{http://purl.org/rss/1.0/modules/content/}encoded", default="").strip()

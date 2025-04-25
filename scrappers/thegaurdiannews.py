@@ -38,8 +38,9 @@ def fetch_guardian_rss_articles(rss_url):
         description_raw = item.findtext("description", default="No Description")
         description = strip_html_tags(description_raw).strip()
 
-        link = item.findtext("link", default="No URL").strip()
-        pub_date = item.findtext("pubDate", default=None).strip()
+        link = item.findtext("link").strip()
+        pub_date = item.findtext("pubDate").strip()
+        if not link or not pub_date: continue
 
         # Get the highest resolution media:content
         image_url = None
@@ -48,9 +49,6 @@ def fetch_guardian_rss_articles(rss_url):
             width = int(media.attrib.get("width", 0))
             if url and (image_url is None or width > 140):  # prefer larger image
                 image_url = url
-
-        if not image_url:
-            image_url = "No image found"
 
         articles.append({
             "title": title,

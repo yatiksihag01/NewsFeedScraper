@@ -18,15 +18,17 @@ def fetch_bbc_news_rss(bbc_rss_url, trending=False):
     articles_data = []
 
     for item in channel.findall("item"):
-        title = item.findtext("title", default="No Title").strip()
+        title = item.findtext("title").strip()
         description = item.findtext("description", default="No Description").strip()
-        url = item.findtext("link", default="No URL").strip()
-        pub_date = item.findtext("pubDate", default="Not Available").strip()
+        url = item.findtext("link").strip()
+        pub_date = item.findtext("pubDate").strip()
+        if not title or not pub_date or not url: continue
 
         # Use media namespace for thumbnail
         media = "{http://search.yahoo.com/mrss/}"
         thumbnail = item.find(f"{media}thumbnail")
-        image_url = thumbnail.attrib["url"] if thumbnail is not None and "url" in thumbnail.attrib else "No image found"
+        image_url = thumbnail.attrib["url"]
+        if not image_url: continue
 
         articles_data.append({
             "title": title,

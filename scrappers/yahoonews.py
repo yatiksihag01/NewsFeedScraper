@@ -1,116 +1,48 @@
-from urllib.parse import urljoin
+import xml.etree.ElementTree as ET
 
 import requests
-from bs4 import BeautifulSoup
 
-from utils.constants import yahoo_news_url, header
+from utils.constants import header
+from utils.utils import get_source_logo
 
 
-def fetch_yahoonews_articles():
-    # Headers to mimic a browser request
+def fetch_yahoonews_articles(rss_url, is_trending=False):
+    # Fetch the RSS feed
     headers = {
-        "User-Agent": header
+        "User-Agent": header,
     }
+    try:
+        response = requests.get(rss_url, headers=headers, timeout=10)
+        response.raise_for_status()
+    except requests.RequestException as e:
+        print(f"Failed to fetch RSS feed: {e}")
+        return []
 
-    # List to store articles
+    root = ET.fromstring(response.content)
+    channel = root.find('channel')
+
     articles_data = []
 
-    # Create a session
-    session = requests.Session()
-    session.headers.update(headers)
+    for item in channel.findall('item'):
+        title = item.findtext("title").strip()
+        article_url = item.findtext("link").strip()
+        pub_date = item.findtext("pubDate").strip()
+        source_name = item.findtext("source").strip()
+        media = item.find("{http://search.yahoo.com/mrss/}content")
+        media_url = media.attrib['url'] if media is not None and 'url' in media.attrib else None
 
-    # Send a GET request
-    response = session.get(yahoo_news_url)
-
-    # Check response status
-    print(f"Status Code: {response.status_code}")
-    if response.status_code != 200:
-        print("Error: Unable to retrieve page.")
-        print(response.text[:1000])  # Print first 1000 characters for debugging
-    else:
-        # Parse the HTML content
-        soup = BeautifulSoup(response.text, 'html.parser')
-
-        # ---- Extract main news articles ----
-        articles = soup.find_all('div', class_='react-wafer-ntk-desktop js-stream-item-wrap Pos(r)')
-
-        for article in articles:
-            # Extract title
-            title_tag = article.find('h3')
-            if title_tag:
-                title = title_tag.text.strip()
-            else:
-                continue
-
-            # Extract article URL
-            link_tag = article.find('a', class_='ntk-link')
-            article_url = urljoin(yahoo_news_url, link_tag['href']) if link_tag and link_tag.has_attr(
-                'href') else 'No URL found'
-
-            # Extract description
-            desc_tag = article.find('p')
-            description = desc_tag.text.strip() if desc_tag else 'No description found'
-
-            # Extract image URL
-            img_tag = article.find('img')
-            url_to_image = urljoin(yahoo_news_url, img_tag['src']) if img_tag and img_tag.has_attr(
-                'src') else 'No image found'
-
-            # Extract published date
-            date_tag = article.find('time')
-            published_at = date_tag.text.strip() if date_tag else 'No date found'
-
-            articles_data.append({
-                "title": title,
-                "url": article_url,
-                "description": description,
-                "urlToImage": url_to_image,
-                "publishedAt": published_at,
-                "source": {
-                    "name": "Yahoo News",
-                    "imageUrl": None
-                }
-            })
-
-        # ---- Extract "Stories for you" articles separately ----
-    stories_section = soup.find('div', id='module-stream')
-
-    if stories_section:
-        stories_articles = stories_section.find_all('li', class_='stream-item')
-
-        for story in stories_articles:
-            # Extract title
-            title_tag = story.find('h3', class_='stream-item-title')
-            title = title_tag.text.strip() if title_tag else 'No title found'
-
-            # Extract article URL
-            link_tag = story.find('a', class_='js-content-viewer')
-            article_url = urljoin(yahoo_news_url, link_tag['href']) if link_tag and link_tag.has_attr(
-                'href') else 'No URL found'
-
-            # Extract description
-            description_tag = story.find('p')  # This will get the first <p> tag found
-            description = description_tag.text.strip() if description_tag else "No description available"
-            # Extract image URL
-            img_tag = story.find('img')
-            url_to_image = urljoin(yahoo_news_url, img_tag['src']) if img_tag and img_tag.has_attr(
-                'src') else 'No image found'
-
-            # Extract published date
-            date_tag = story.find('time')
-            published_at = date_tag.text.strip() if date_tag else 'No date found'
-
-            articles_data.append({
-                "title": title,
-                "url": article_url,
-                "description": description,
-                "urlToImage": url_to_image,
-                "publishedAt": published_at,
-                "source": {
-                    "name": "Yahoo News",
-                    "imageUrl": None
-                }
-            })
+        articles_data.append({
+            "title": title,
+            "url": article_url,
+            "description": None,
+            "urlToImage": media_url,
+            "publishedAt": pub_date,
+            "source": {
+                "name": source_name,
+                "imageUrl": get_source_logo(source_name)
+            },
+            "is_trending": is_trending
+        })
 
     print(f"Scrapped {len(articles_data)} articles from Yahoo News.")
     return articles_data
