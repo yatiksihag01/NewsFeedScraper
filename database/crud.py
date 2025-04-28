@@ -12,7 +12,7 @@ from schemas.news import NewsResponse
 from utils.utils import article_to_news_response
 
 
-def get_news_from_db(db: Session, last_item_id: int, limit: int = 100) -> list[NewsResponse]:
+def get_news_from_db(db: Session, last_item_id: int = 0, limit: int = 100) -> list[NewsResponse]:
     articles = (
         db.query(Article)
         .options(joinedload(Article.source))
@@ -36,6 +36,10 @@ def get_trending_news_from_db(
     )
     articles = cast(List[Article], articles)
     return [article_to_news_response(article) for article in articles]
+
+
+def get_article_by_uuid(db: Session, uuid: str) -> Article | None:
+    return db.query(Article).filter(Article.uuid == uuid).first()
 
 
 def save_articles(articles: list[dict]):

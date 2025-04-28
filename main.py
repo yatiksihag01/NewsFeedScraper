@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from fastapi import FastAPI
@@ -29,12 +29,24 @@ def shutdown_event():
 
 
 @app.get("/fetch_news", response_model=List[NewsResponse])
-def fetch_news(last_item_id: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+def fetch_news(
+        last_item_uuid: Optional[str] = None,
+        limit: int = 100, db: Session = Depends(get_db)
+):
     if limit > 100: limit = 100
+    article = crud.get_article_by_uuid(db=db, uuid=last_item_uuid)
+    # If UUID not found (e.g., scraper DB reset), start from the first article
+    last_item_id = article.id if article else 0
     return crud.get_news_from_db(db=db, last_item_id=last_item_id, limit=limit)
 
 
 @app.get("/fetch_trending_news", response_model=List[NewsResponse])
-def fetch_trending_news(last_item_id: int = 0, limit: int = 50, db: Session = Depends(get_db)):
+def fetch_trending_news(
+        last_item_uuid: Optional[str] = None,
+        limit: int = 50,
+        db: Session = Depends(get_db)
+):
     if limit > 50: limit = 50
+    article = crud.get_article_by_uuid(db=db, uuid=last_item_uuid)
+    last_item_id = article.id if article else 0
     return crud.get_trending_news_from_db(db=db, last_item_id=last_item_id, limit=limit)

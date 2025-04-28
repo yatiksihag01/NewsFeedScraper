@@ -14,6 +14,7 @@ class SourceResponse(BaseModel):
 
 class NewsResponse(BaseModel):
     id: int
+    uuid: str
     title: str
     url: str
     urlToImage: Optional[str]

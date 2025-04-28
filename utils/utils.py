@@ -21,6 +21,7 @@ def article_to_news_response(article: Article):
     )
     news_response = NewsResponse(
         id=article.id,
+        uuid=article.uuid,
         title=article.title,
         url=article.url,
         description=article.description,
